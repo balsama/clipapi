@@ -1,6 +1,10 @@
 <?php
 
-function clipapi_encode($vShortKey ='qjF78QExpW@', $vLongKey = 'G2VtAIXwLJ5UZ6HiY.jxmbup&$q zDEs!M3_4Q@ld19KTRWNnFgSfkCyv08OBa%rPh7coe', $vPID = '16721', $vInputText) {
+function clipapi_encode($vInputText) {
+  $vLongKey = variable_get('clipapi_keylong', '');
+  $vShortKey = variable_get('clipapi_keyshort', '');
+  $vPID = variable_get('clipapi_pid', 'prod');
+
   $decodeX = " ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789._!%@$&";
   $dxLength = 70;
 
@@ -70,7 +74,11 @@ function clipapi_encode($vShortKey ='qjF78QExpW@', $vLongKey = 'G2VtAIXwLJ5UZ6Hi
   return $eString;
 }
 
-function clipapi_decode($vInputText, $vShortKey ='qjF78QExpW@', $vLongKey = 'G2VtAIXwLJ5UZ6HiY.jxmbup&$q zDEs!M3_4Q@ld19KTRWNnFgSfkCyv08OBa%rPh7coe', $vPID = '16721') {
+function clipapi_decode($vInputText) {
+  $vLongKey = variable_get('clipapi_keylong', '');
+  $vShortKey = variable_get('clipapi_keyshort', '');
+  $vPID = variable_get('clipapi_pid', 'prod');
+
   $decodeX = " ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789._!%@$&";
   $dxLength = 70;
 

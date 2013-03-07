@@ -10,7 +10,7 @@
   ini_set('error_log', dirname(__FILE__) . '/_php_error.log');
   // end: show errors
 
-include('clipapi_cipher.inc');
+include('clipapi.cipher.inc');
 
 function clipapi_menu() {
   $items['requests'] = array(
@@ -20,7 +20,20 @@ function clipapi_menu() {
     'access arguments' => array('access content'),
     'type' => MENU_CALLBACK,
   );
+  $items['admin/settings/clipapi'] = array(
+    'title' => 'CLIP API Settings',
+    'description' => 'Configure CLIP cipher and account variables',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('clipapi_admin'),
+    'access arguments' => array('administer clip api settings'),
+    'type' => MENU_NORMAL_ITEM,
+    'file' => 'clipapi.admin.inc',
+  );
   return $items;
+}
+
+function clipapi_perm() {
+  return array('administer clip api settings');
 }
 
 function clipapi_functions() {
