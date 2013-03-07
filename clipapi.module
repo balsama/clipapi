@@ -13,9 +13,9 @@
 include('clipapi.cipher.inc');
 
 function clipapi_menu() {
-  $items['requests'] = array(
+  $items['clip-xml/%'] = array(
     'title' => t('http requests'),
-    'page callback' => 'clipapi_functions',
+    'page callback' => 'clipapi_xml',
     'access callback' => TRUE,
     'access arguments' => array('access content'),
     'type' => MENU_CALLBACK,
@@ -36,54 +36,70 @@ function clipapi_perm() {
   return array('administer clip api settings');
 }
 
-function clipapi_functions() {
-  $contents = clip_options('get_js');
+function clipapi_xml() {
+  $service = check_plain(arg(1));
+  if (empty($service)) {
+    return 'Please specify a service.';
+    drupal_set_message('No service specified.');
+  }
+  $contents = clip_options($service);
+  if ($contents == FALSE) {
+    drupal_set_message('The specified service: "' . arg(1) . '", is not defined.', 'error');
+    return 'Unsupported Service.';
+  }
   drupal_set_header('Content-Type: text/xml; charset=utf-8');
   print $contents;
+  //return 'foo';
 }
 
-function clip_options($service, $process = TRUE) {
-  switch($service) {
-    case 'get_offers' :
-      $options = array(
-        'options' => array(
-          'query' => array(
-            'sPartnerToken' => '8038e590-58b9-4deb-86fa-9638c3b94e6e',
-            'nPID' => '16721',
-          ),
+function clip_options($requested_service, $process = TRUE) {
+  $browscap = get_browser($_SERVER['HTTP_USER_AGENT']);
+  $services = array(
+    'GetOffers' => array(
+      'options' => array(
+        'query' => array(
+          'sPartnerToken' => '8038e590-58b9-4deb-86fa-9638c3b94e6e',
+          'nPID' => '16721',
         ),
-        'service' => array(
-          'engine' => 'OffersEngine.asmx',
-          'service' => 'GetOffers',
+      ),
+      'service' => array(
+        'engine' => 'OffersEngine.asmx',
+        'service' => 'GetOffers',
+      ),
+    ),
+    'GetDetectScript' => array(
+      'options' => array(
+        'query' => array(
+          'sPartnerToken' => '8038e590-58b9-4deb-86fa-9638c3b94e6e',
+          'nPID' => '16721',
+          'operatingSystem' => $browscap->platform,
+          'browser' => $browscap->browser,
+          'majorVer' => $browscap->majorver,
+          'minorVer' => $browscap->minorver,
+          'callBackFunc' => '',
+          'autoInitiate' => 'false',
+          'MACSecondPage' => NULL,
         ),
-      );
-      break;
-    case 'get_js' :
-      $browscap = get_browser($_SERVER['HTTP_USER_AGENT']);
-      $options = array(
-        'options' => array(
-          'query' => array(
-            'sPartnerToken' => '8038e590-58b9-4deb-86fa-9638c3b94e6e',
-            'nPID' => '16721',
-            'operatingSystem' => $browscap->platform,
-            'browser' => $browscap->browser,
-            'majorVer' => $browscap->majorver,
-            'minorVer' => $browscap->minorver,
-            'callBackFunc' => '',
-            'autoInitiate' => 'false',
-            'MACSecondPage' => NULL,
-          ),
-          'external' => TRUE,
-        ),
-        'service' => array(
-          'engine' => 'PrintEngine.asmx',
-          'service' => 'GetDetectScript',
-        ),
-      );
-      break;
+        'external' => TRUE,
+      ),
+      'service' => array(
+        'engine' => 'PrintEngine.asmx',
+        'service' => 'GetDetectScript',
+      ),
+    ),
+  );
+
+  foreach ($services as $service_name=>$definition) {
+    if ($service_name == $requested_service) {
+      $service_definition = $definition;
+    }
   }
+  if (empty($service_definition)) {
+    return FALSE;
+  }
+
   if ($process) {
-    return clip_process($options);
+    return clip_process($service_definition);
   }
   else {
     return $options;
