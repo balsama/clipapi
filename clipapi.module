@@ -1,0 +1,86 @@
+<?php
+  // show errors
+  if (!defined('E_STRICT')) { define('E_STRICT', 2048); } // E_STRICT isn't defined in PHP 4
+  error_reporting(E_ALL | E_STRICT);
+  ini_set('display_errors', '1');         //
+  ini_set('display_startup_errors', '1'); //
+  ini_set('track_errors', '1');           // store last error in $php_errormsg
+  ini_set('html_errors', '0');            // don't output html links in error messages
+  ini_set('log_errors', '1');
+  ini_set('error_log', dirname(__FILE__) . '/_php_error.log');
+  // end: show errors
+
+include('clipapi_cipher.inc');
+
+function clipapi_menu() {
+  $items['requests'] = array(
+    'title' => t('http requests'),
+    'page callback' => 'clipapi_functions',
+    'access callback' => TRUE,
+    'access arguments' => array('access content'),
+    'type' => MENU_CALLBACK,
+  );
+  return $items;
+}
+
+function clipapi_functions() {
+  $contents = clip_options('get_js');
+  drupal_set_header('Content-Type: text/xml; charset=utf-8');
+  print $contents;
+}
+
+function clip_options($service, $process = TRUE) {
+  switch($service) {
+    case 'get_offers' :
+      $options = array(
+        'options' => array(
+          'query' => array(
+            'sPartnerToken' => '8038e590-58b9-4deb-86fa-9638c3b94e6e',
+            'nPID' => '16721',
+          ),
+        ),
+        'service' => array(
+          'engine' => 'OffersEngine.asmx',
+          'service' => 'GetOffers',
+        ),
+      );
+      break;
+    case 'get_js' :
+      $browscap = get_browser($_SERVER['HTTP_USER_AGENT']);
+      $options = array(
+        'options' => array(
+          'query' => array(
+            'sPartnerToken' => '8038e590-58b9-4deb-86fa-9638c3b94e6e',
+            'nPID' => '16721',
+            'operatingSystem' => $browscap->platform,
+            'browser' => $browscap->browser,
+            'majorVer' => $browscap->majorver,
+            'minorVer' => $browscap->minorver,
+            'callBackFunc' => '',
+            'autoInitiate' => 'false',
+            'MACSecondPage' => NULL,
+          ),
+          'external' => TRUE,
+        ),
+        'service' => array(
+          'engine' => 'PrintEngine.asmx',
+          'service' => 'GetDetectScript',
+        ),
+      );
+      break;
+  }
+  if ($process) {
+    return clip_process($options);
+  }
+  else {
+    return $options;
+  }
+}
+
+function clip_process($options) {
+  $service = implode('/', $options['service']);
+  $url = url('http://clip.pdn.coupons.com/COS20/' . $service, $options['options']);
+  $xml = file_get_contents($url);
+  $xml = (clipapi_decode(simplexml_load_string($xml)));
+  return $xml;
+}

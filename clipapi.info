@@ -1,0 +1,4 @@
+name = CLIP API
+description = Fetches and decrypts XML feeds from Coupons.com API
+core = 6.x
+
