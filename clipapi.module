@@ -54,38 +54,38 @@ function clipapi_xml() {
 
 function clip_options($requested_service, $process = TRUE) {
   $browscap = get_browser($_SERVER['HTTP_USER_AGENT']);
-  $services = array(
-    'GetOffers' => array(
-      'options' => array(
-        'query' => array(
-          'sPartnerToken' => '8038e590-58b9-4deb-86fa-9638c3b94e6e',
-          'nPID' => '16721',
-        ),
-      ),
-      'service' => array(
-        'engine' => 'OffersEngine.asmx',
-        'service' => 'GetOffers',
+
+  $services['GetOffers'] = array(
+    'options' => array(
+      'query' => array(
+        'sPartnerToken' => '8038e590-58b9-4deb-86fa-9638c3b94e6e',
+        'nPID' => '16721',
       ),
     ),
-    'GetDetectScript' => array(
-      'options' => array(
-        'query' => array(
-          'sPartnerToken' => '8038e590-58b9-4deb-86fa-9638c3b94e6e',
-          'nPID' => '16721',
-          'operatingSystem' => $browscap->platform,
-          'browser' => $browscap->browser,
-          'majorVer' => $browscap->majorver,
-          'minorVer' => $browscap->minorver,
-          'callBackFunc' => '',
-          'autoInitiate' => 'false',
-          'MACSecondPage' => NULL,
-        ),
-        'external' => TRUE,
+    'service' => array(
+      'engine' => 'OffersEngine.asmx',
+      'service' => 'GetOffers',
+    ),
+  );
+
+  $services['GetDetectScript'] = array(
+    'options' => array(
+      'query' => array(
+        'sPartnerToken' => '8038e590-58b9-4deb-86fa-9638c3b94e6e',
+        'nPID' => '16721',
+        'operatingSystem' => $browscap->platform,
+        'browser' => $browscap->browser,
+        'majorVer' => $browscap->majorver,
+        'minorVer' => $browscap->minorver,
+        'callBackFunc' => '',
+        'autoInitiate' => 'false',
+        'MACSecondPage' => NULL,
       ),
-      'service' => array(
-        'engine' => 'PrintEngine.asmx',
-        'service' => 'GetDetectScript',
-      ),
+      'external' => TRUE,
+    ),
+    'service' => array(
+      'engine' => 'PrintEngine.asmx',
+      'service' => 'GetDetectScript',
     ),
   );
 
