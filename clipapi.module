@@ -108,7 +108,7 @@ function clip_options($requested_service, $process = TRUE) {
         'minorVer' => $browscap->minorver,
         'callBackFunc' => 'GetDeviceID',
         'autoInitiate' => 'true',
-        'MACSecondPage' => NULL,
+        'MACSecondPage' => '',
       ),
       'external' => TRUE,
     ),
@@ -147,8 +147,9 @@ function clip_process($options) {
   $domain = (variable_get('clipapi_environment', 'prod') == 'prod') ? 'http://insight.coupons.com/COS20/' : 'http://clip.pdn.coupons.com/COS20/';
   $service = implode('/', $options['service']);
   $url = url($domain . $service, $options['options']);
-  $xml = file_get_contents($url);
-  $xml = simplexml_load_string($xml);
-  $xml = clipapi_decode($xml);
-  return $xml;
+  $results = drupal_http_request($url, array(), 'GET');
+  $response = $results->data;
+  $response = simplexml_load_string($response);
+  $response = clipapi_decode($response);
+  return $response;
 }
