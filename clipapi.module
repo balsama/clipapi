@@ -12,6 +12,11 @@
 
 include('clipapi.cipher.inc');
 
+/**
+ * Implements hook_menu()
+ *
+ * Defines two pages. Once for the XML itself and one for the config form
+ */
 function clipapi_menu() {
   $items['clip-xml/%'] = array(
     'title' => t('http requests'),
@@ -32,28 +37,52 @@ function clipapi_menu() {
   return $items;
 }
 
+/**
+ * Implements hook_perm().
+ */
 function clipapi_perm() {
   return array('administer clip api settings');
 }
 
+/**
+ * Generates the contents of /clip-xml/[ServiceName]
+ *
+ * Calls clip options which calls CLIP API and formats and returns the results.
+ */
 function clipapi_xml() {
   $service = check_plain(arg(1));
   if (empty($service)) {
-    return 'Please specify a service.';
-    drupal_set_message('No service specified.');
+    $contents = format_xml_elements(array('error' => 'Please specify a service'));
   }
   $contents = clip_options($service);
   if ($contents == FALSE) {
-    drupal_set_message('The specified service: "' . arg(1) . '", is not defined.', 'error');
-    return 'Unsupported Service.';
+    $contents = format_xml_elements(array('error' => 'Unsupported Service'));
+    watchdog('CLIP API', 'Unsupported service called: @service', array('@service' => arg(1)));
   }
   drupal_set_header('Content-Type: text/xml; charset=utf-8');
   print $contents;
-  //return 'foo';
 }
 
+/**
+ * @param string $requested_service
+ *   Valid CLIP API service to call, e.g 'GetOffers'.
+ * @param boolean $process
+ *   (optional) Whether or not to actually make the call to the API or just
+ *   return the definition of the service.
+ *
+ * @return
+ *   Definition of the service if $process is set to true, else calls the
+ *   clip_process() function.
+ */
 function clip_options($requested_service, $process = TRUE) {
   $browscap = get_browser($_SERVER['HTTP_USER_AGENT']);
+  $base_query = array(
+    'sPartnerToken' => '8038e590-58b9-4deb-86fa-9638c3b94e6e',
+    'nPID' => '16721',
+  );
+
+  $services['GetCategories'] = array(
+  );
 
   $services['GetOffers'] = array(
     'options' => array(
@@ -77,8 +106,8 @@ function clip_options($requested_service, $process = TRUE) {
         'browser' => $browscap->browser,
         'majorVer' => $browscap->majorver,
         'minorVer' => $browscap->minorver,
-        'callBackFunc' => '',
-        'autoInitiate' => 'false',
+        'callBackFunc' => 'GetDeviceID',
+        'autoInitiate' => 'true',
         'MACSecondPage' => NULL,
       ),
       'external' => TRUE,
@@ -89,7 +118,7 @@ function clip_options($requested_service, $process = TRUE) {
     ),
   );
 
-  foreach ($services as $service_name=>$definition) {
+  foreach ($services as $service_name => $definition) {
     if ($service_name == $requested_service) {
       $service_definition = $definition;
     }
@@ -106,10 +135,20 @@ function clip_options($requested_service, $process = TRUE) {
   }
 }
 
+/**
+ * @param array $options
+ *   Formatted array containing the definition of the CLIP API service to be
+ *   called.
+ *
+ * @return
+ *   Formatted XML object ready for ingestion.
+ */
 function clip_process($options) {
+  $domain = (variable_get('clipapi_environment', 'prod') == 'prod') ? 'http://insight.coupons.com/COS20/' : 'http://clip.pdn.coupons.com/COS20/';
   $service = implode('/', $options['service']);
-  $url = url('http://clip.pdn.coupons.com/COS20/' . $service, $options['options']);
+  $url = url($domain . $service, $options['options']);
   $xml = file_get_contents($url);
-  $xml = (clipapi_decode(simplexml_load_string($xml)));
+  $xml = simplexml_load_string($xml);
+  $xml = clipapi_decode($xml);
   return $xml;
 }
