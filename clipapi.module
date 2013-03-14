@@ -18,7 +18,7 @@ include('clipapi.cipher.inc');
  * Defines two pages. Once for the XML itself and one for the config form
  */
 function clipapi_menu() {
-  $items['clip-xml/%'] = array(
+  $items['clip-xml/%/%'] = array(
     'title' => t('http requests'),
     'page callback' => 'clipapi_xml',
     'access callback' => TRUE,
@@ -59,9 +59,12 @@ function clipapi_xml() {
     $contents = format_xml_elements(array('error' => 'Unsupported Service'));
     watchdog('CLIP API', 'Unsupported service called: @service', array('@service' => arg(1)));
   }
-  drupal_set_header('Content-Type: text/xml; charset=utf-8');
-  print $contents;
+  drupal_set_header('Content-Type: text/xml; charset=' . arg(2));
+  //print $contents;
+  print mb_convert_encoding($contents, arg(2), 'utf-8');
+  //return 'foo';
 }
+
 
 /**
  * @param string $requested_service
@@ -82,6 +85,8 @@ function clip_options($requested_service, $process = TRUE) {
   );
 
   $services['GetCategories'] = array(
+    // The API returns an unencrypted string for this mofo. Not sure what's up
+    // with that
   );
 
   $services['GetOffers'] = array(
@@ -118,6 +123,42 @@ function clip_options($requested_service, $process = TRUE) {
     ),
   );
 
+  // Returns blank screen
+  $services['GetPrintToken'] = array(
+    'options' => array(
+      'query' => array(
+        'sPartnerToken' => '8038e590-58b9-4deb-86fa-9638c3b94e6e',
+        'nPID' => '16721',
+        'aCouponList' => array(
+          '1',
+          '2',
+        ),
+        'DeviceID' => '',
+        'AccessID' => '',
+        'AffliateIiD' => '',
+        'PlatformID' => '15',
+        'KeywordID' => '0',
+      ),
+    ),
+    'service' => array(
+      'engine' => 'PrintManger.ASPX',
+      'service' => 'GetPrintToken',
+    ),
+  );
+
+  $services['GetAllTargettedOffers'] = array(
+    'options' => array(
+      'query' => array(
+        'sPartnerToken' => '8038e590-58b9-4deb-86fa-9638c3b94e6e',
+        'nPID' => '16721',
+      ),
+    ),
+    'service' => array(
+      'engine' => 'TargettedEngine.asmx',
+      'service' => 'GetAllTargettedOffers',
+    ),
+  );
+
   foreach ($services as $service_name => $definition) {
     if ($service_name == $requested_service) {
       $service_definition = $definition;
@@ -147,6 +188,7 @@ function clip_process($options) {
   $domain = (variable_get('clipapi_environment', 'prod') == 'prod') ? 'http://insight.coupons.com/COS20/' : 'http://clip.pdn.coupons.com/COS20/';
   $service = implode('/', $options['service']);
   $url = url($domain . $service, $options['options']);
+  //dpm($url);
   $results = drupal_http_request($url, array(), 'GET');
   $response = $results->data;
   $response = simplexml_load_string($response);
