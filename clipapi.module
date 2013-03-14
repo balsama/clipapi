@@ -10,21 +10,12 @@
   ini_set('error_log', dirname(__FILE__) . '/_php_error.log');
   // end: show errors
 
-include('clipapi.cipher.inc');
+include('includes/clipapi.cipher.inc');
 
 /**
  * Implements hook_menu()
- *
- * Defines two pages. Once for the XML itself and one for the config form
  */
 function clipapi_menu() {
-  $items['clip-xml/%/%'] = array(
-    'title' => t('http requests'),
-    'page callback' => 'clipapi_xml',
-    'access callback' => TRUE,
-    'access arguments' => array('access content'),
-    'type' => MENU_CALLBACK,
-  );
   $items['admin/settings/clipapi'] = array(
     'title' => 'CLIP API Settings',
     'description' => 'Configure CLIP cipher and account variables',
@@ -32,7 +23,7 @@ function clipapi_menu() {
     'page arguments' => array('clipapi_admin'),
     'access arguments' => array('administer clip api settings'),
     'type' => MENU_NORMAL_ITEM,
-    'file' => 'clipapi.admin.inc',
+    'file' => 'includes/clipapi.admin.inc',
   );
   return $items;
 }
@@ -45,26 +36,21 @@ function clipapi_perm() {
 }
 
 /**
- * Generates the contents of /clip-xml/[ServiceName]
  *
  * Calls clip options which calls CLIP API and formats and returns the results.
  */
-function clipapi_xml() {
-  $service = check_plain(arg(1));
+function clipapi_get($service) {
+  $service = check_plain($service);
   if (empty($service)) {
     $contents = format_xml_elements(array('error' => 'Please specify a service'));
   }
   $contents = clip_options($service);
   if ($contents == FALSE) {
     $contents = format_xml_elements(array('error' => 'Unsupported Service'));
-    watchdog('CLIP API', 'Unsupported service called: @service', array('@service' => arg(1)));
+    watchdog('CLIP API', 'Unsupported service called: @service', array('@service' => $service));
   }
-  drupal_set_header('Content-Type: text/xml; charset=' . arg(2));
-  //print $contents;
-  print mb_convert_encoding($contents, arg(2), 'utf-8');
-  //return 'foo';
+  return $contents;
 }
-
 
 /**
  * @param string $requested_service
@@ -78,86 +64,8 @@ function clipapi_xml() {
  *   clip_process() function.
  */
 function clip_options($requested_service, $process = TRUE) {
-  $browscap = get_browser($_SERVER['HTTP_USER_AGENT']);
-  $base_query = array(
-    'sPartnerToken' => '8038e590-58b9-4deb-86fa-9638c3b94e6e',
-    'nPID' => '16721',
-  );
-
-  $services['GetCategories'] = array(
-    // The API returns an unencrypted string for this mofo. Not sure what's up
-    // with that
-  );
-
-  $services['GetOffers'] = array(
-    'options' => array(
-      'query' => array(
-        'sPartnerToken' => '8038e590-58b9-4deb-86fa-9638c3b94e6e',
-        'nPID' => '16721',
-      ),
-    ),
-    'service' => array(
-      'engine' => 'OffersEngine.asmx',
-      'service' => 'GetOffers',
-    ),
-  );
-
-  $services['GetDetectScript'] = array(
-    'options' => array(
-      'query' => array(
-        'sPartnerToken' => '8038e590-58b9-4deb-86fa-9638c3b94e6e',
-        'nPID' => '16721',
-        'operatingSystem' => $browscap->platform,
-        'browser' => $browscap->browser,
-        'majorVer' => $browscap->majorver,
-        'minorVer' => $browscap->minorver,
-        'callBackFunc' => 'GetDeviceID',
-        'autoInitiate' => 'true',
-        'MACSecondPage' => '',
-      ),
-      'external' => TRUE,
-    ),
-    'service' => array(
-      'engine' => 'PrintEngine.asmx',
-      'service' => 'GetDetectScript',
-    ),
-  );
-
-  // Returns blank screen
-  $services['GetPrintToken'] = array(
-    'options' => array(
-      'query' => array(
-        'sPartnerToken' => '8038e590-58b9-4deb-86fa-9638c3b94e6e',
-        'nPID' => '16721',
-        'aCouponList' => array(
-          '1',
-          '2',
-        ),
-        'DeviceID' => '',
-        'AccessID' => '',
-        'AffliateIiD' => '',
-        'PlatformID' => '15',
-        'KeywordID' => '0',
-      ),
-    ),
-    'service' => array(
-      'engine' => 'PrintManger.ASPX',
-      'service' => 'GetPrintToken',
-    ),
-  );
-
-  $services['GetAllTargettedOffers'] = array(
-    'options' => array(
-      'query' => array(
-        'sPartnerToken' => '8038e590-58b9-4deb-86fa-9638c3b94e6e',
-        'nPID' => '16721',
-      ),
-    ),
-    'service' => array(
-      'engine' => 'TargettedEngine.asmx',
-      'service' => 'GetAllTargettedOffers',
-    ),
-  );
+  include_once('includes/clipapi.services.inc');
+  $services = clipapi_services();
 
   foreach ($services as $service_name => $definition) {
     if ($service_name == $requested_service) {
@@ -185,13 +93,40 @@ function clip_options($requested_service, $process = TRUE) {
  *   Formatted XML object ready for ingestion.
  */
 function clip_process($options) {
+  // Contruct API URL
   $domain = (variable_get('clipapi_environment', 'prod') == 'prod') ? 'http://insight.coupons.com/COS20/' : 'http://clip.pdn.coupons.com/COS20/';
   $service = implode('/', $options['service']);
   $url = url($domain . $service, $options['options']);
-  //dpm($url);
+  dpm($url);
+
+  // HTTP GET
   $results = drupal_http_request($url, array(), 'GET');
+
+  // The response is in data
+  //
+  // @todo
+  //   check response code and throw error if not ok
   $response = $results->data;
+
+  // I have no idea why, but their decode function returns gibberish if we
+  // don't run the reponse through simplexml first (thanks for your support
+  // coupons inc).
   $response = simplexml_load_string($response);
   $response = clipapi_decode($response);
-  return $response;
+
+  // Their api returns XML labeled as utf-16, but it contains utf-8 characters.
+  // Do we convert the provided utf-8 to utf-16 since it's labeled that way and
+  // will throw errors otherwise
+  $response = mb_convert_encoding($response, 'utf-16', 'utf-8');
+
+  // Now we finally have a properly encoded, decrypted string that we can
+  // convert into an object.
+  $response = simplexml_load_string($response);
+
+  // Before returning, we convert the object into a nice array
+  return clipapi_objtoarr($response);
+}
+
+function clipapi_objtoarr ($object) {
+  return @json_decode(@json_encode($object),1);
 }
