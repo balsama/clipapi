@@ -1,0 +1,5 @@
+name = CLIP API Cache
+description = Fetches and caches certain semi-static API calls
+core = 6.x
+package = CLIP API
+dependencies[] = clipapi

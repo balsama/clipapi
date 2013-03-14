@@ -1,0 +1,19 @@
+<?php
+function clipapicache_getscript() {
+  $cid = 'clipapi_GetDetectJs-' . $_SERVER['HTTP_USER_AGENT'];
+  $data = cache_get($cid);
+  if (empty($data)) {
+    $gds = clipapi_get('GetDetectScript');
+    $data = array(
+      'JSCode' => $gds['JSCode'],
+      'HTML' => $gds['HTML'],
+    );
+    $table = 'cache';
+    $expire = (time() + (60*60*24*7));
+    cache_set($cid, $data, $table, $expire);
+  }
+  else {
+    $gds = $data->data;
+  }
+  return $gds;
+}
