@@ -1,9 +1,20 @@
 <?php
-function clipapicache_getscript() {
-  $cid = 'clipapi_GetDetectJs-' . $_SERVER['HTTP_USER_AGENT'];
+/**
+ * @param
+ *   $type string - the Service to call. Valid $types:
+ *     - 'GetDetectScript'
+ *     - 'GetInstallScript'
+ * @return
+ *   array - JS Code (string) and HTML (string)
+ *
+ * This function will attempt to return results from the local cache before
+ * making a call to the API.
+ */
+function clipapicache_getscript($type = 'GetDetectScript') {
+  $cid = 'clipapi_GetDetectJs-' . $type . $_SERVER['HTTP_USER_AGENT'];
   $data = cache_get($cid);
   if (empty($data)) {
-    $gds = clipapi_get('GetDetectScript');
+    $gds = clipapi_get($type);
     $data = array(
       'JSCode' => $gds['JSCode'],
       'HTML' => $gds['HTML'],
