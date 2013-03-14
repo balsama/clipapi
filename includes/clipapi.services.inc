@@ -49,13 +49,12 @@ function clipapi_services($browscap = FALSE) {
         'sPartnerToken' => '8038e590-58b9-4deb-86fa-9638c3b94e6e',
         'nPID' => '16721',
         'operatingSystem' => $browscap->platform,
-        'browser' => $browscap->browser,
+        'browser' => 'Firefox', //$browscap->browser, Documentation says you can pass anything here, but "chrome" causes a 500 error
         'majorVer' => $browscap->majorver,
         'minorVer' => $browscap->minorver,
         'callBackFunc' => '',
         'autoInitiate' => 'false',
       ),
-      'external' => TRUE,
     ),
     'service' => array(
       'engine' => 'PrintEngine.asmx',
