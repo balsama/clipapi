@@ -1,0 +1,54 @@
+<?php
+function clipapitest_menu() {
+  $items['admin/settings/clipapi/clipapi-test'] = array(
+    'title' => t('CLIP API HTTP Request Results'),
+    'page callback' => 'clipapitest_test',
+    'access callback' => TRUE,
+    'access arguments' => array('access content'),
+    'type' => MENU_LOCAL_TASK,
+    'weight' => 2,
+  );
+  return $items;
+}
+
+function clipapitest_test() {
+  return drupal_get_form('clipapitest_form');
+}
+
+function clipapitest_form() {
+  $form['clipapitest_service'] = array(
+    '#type' => 'select',
+    '#title' => 'Service',
+    '#options' => array(
+      'GetDetectScript' => 'GetDetectScript',
+      'GetInstallScript' => 'GetInstallScript',
+      'GetAllTargettedOffers' => 'GetAllTargettedOffers',
+      'GetOffers' => 'GetOffers',
+    ),
+  );
+
+  $form['clipapitest_cache'] = array(
+    '#type' => 'checkbox',
+    '#title' => 'Cache',
+    '#description' => 'Attempt to return locallaly cached results.',
+  );
+
+  $form['clipapitest_submit'] = array(
+    '#type' => 'submit',
+    '#value' => 'Run API Call',
+  );
+
+  $form['#submit'][] = 'clipapitest_submit';
+
+  return $form;
+}
+
+function clipapitest_submit($form, &$form_state) {
+  if ($form['#post']['clipapitest_cache']) {
+    dpm(clipapicache_getscript($form['#post']['clipapitest_service']));
+  }
+  else {
+    dpm(clipapi_get($form['#post']['clipapitest_service']));
+  }
+}
+

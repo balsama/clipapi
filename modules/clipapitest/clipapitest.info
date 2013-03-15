@@ -1,0 +1,6 @@
+name = CLIP API Test
+description = Allows you to test and see output from CLIP API Calls geenrated by the CLIP API Module.
+core = 6.x
+package = CLIP API
+dependencies[] = clipapi
+dependencies[] = devel
