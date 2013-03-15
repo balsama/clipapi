@@ -17,7 +17,7 @@ include('includes/clipapi.cipher.inc');
  */
 function clipapi_menu() {
   $items['admin/settings/clipapi'] = array(
-    'title' => 'CLIP API Settings',
+    'title' => 'CLIP API',
     'description' => 'Configure CLIP cipher and account variables',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('clipapi_admin'),
@@ -25,6 +25,18 @@ function clipapi_menu() {
     'type' => MENU_NORMAL_ITEM,
     'file' => 'includes/clipapi.admin.inc',
   );
+  $items['admin/settings/clipapi/settings'] = array(
+    'title' => 'CLIP API',
+    'description' => 'Configure CLIP cipher and account variables',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('clipapi_admin'),
+    'access arguments' => array('administer clip api settings'),
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+    'file' => 'includes/clipapi.admin.inc',
+    'weight' => 1,
+  );
+
+
   return $items;
 }
 
@@ -97,7 +109,6 @@ function clip_process($options) {
   $domain = (variable_get('clipapi_environment', 'prod') == 'prod') ? 'http://insight.coupons.com/COS20/' : 'http://clip.pdn.coupons.com/COS20/';
   $service = implode('/', $options['service']);
   $url = url($domain . $service, $options['options']);
-  dpm($url);
 
   // HTTP GET
   $results = drupal_http_request($url, array(), 'GET');
