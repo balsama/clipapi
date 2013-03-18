@@ -21,7 +21,7 @@ function clipapi_menu() {
     'description' => 'Configure CLIP cipher and account variables',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('clipapi_admin'),
-    'access arguments' => array('administer clip api settings'),
+    'access arguments' => array('administer clip api'),
     'type' => MENU_NORMAL_ITEM,
     'file' => 'includes/clipapi.admin.inc',
   );
@@ -30,7 +30,7 @@ function clipapi_menu() {
     'description' => 'Configure CLIP cipher and account variables',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('clipapi_admin'),
-    'access arguments' => array('administer clip api settings'),
+    'access arguments' => array('administer clip api'),
     'type' => MENU_DEFAULT_LOCAL_TASK,
     'file' => 'includes/clipapi.admin.inc',
     'weight' => 1,
@@ -44,7 +44,7 @@ function clipapi_menu() {
  * Implements hook_perm().
  */
 function clipapi_perm() {
-  return array('administer clip api settings');
+  return array('administer clip api');
 }
 
 /**
