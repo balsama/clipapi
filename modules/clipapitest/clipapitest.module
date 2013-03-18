@@ -4,7 +4,7 @@ function clipapitest_menu() {
     'title' => t('CLIP API HTTP Request Results'),
     'page callback' => 'clipapitest_test',
     'access callback' => TRUE,
-    'access arguments' => array('access content'),
+    'access arguments' => array('administer clip api'),
     'type' => MENU_LOCAL_TASK,
     'weight' => 2,
   );
