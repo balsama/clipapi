@@ -1,0 +1,175 @@
+<?php
+/**
+ * Compares current offers with what CLIP API returns from GetOffers Service
+ * call and creates, updates and deletes accordingly.
+ */
+function clipapioffer_crud($service) {
+  $count_create = 0;
+  $offers_existing_id = array();
+
+  $offers_clip = clipapi_get($service);
+  $image_prefix = $offers_clip['ImageURLPrefix'];
+  $offers_clip = $offers_clip['CouponList']['Coupon'];
+  $result = db_query("SELECT title FROM {node} WHERE type = 'offer'");
+  while ($row = db_fetch_array($result)) {
+    $offers_existing_id[] = $row['title'];
+  }
+
+  foreach ($offers_clip as $offer_clip) {
+    $exists = FALSE;
+    foreach ($offers_existing_id as $offer_existing_id) {
+      if ($offer_clip['ID'] == $offer_existing_id) {
+        // We have a match
+        // @todo load the node, check if everything still matches
+        $exists = TRUE;
+      }
+    }
+    if (!($exists)) {
+      clipapioffer_create($offer_clip);
+      $count_create++;
+    }
+  } // END foreach offer from API call GetOffers
+  $count_pulled = 0;
+
+  // Delete pulled offers
+  foreach ($offers_existing_id as $offer_existing_id) {
+    $match = FALSE;
+    foreach ($offers_clip as $offer_clip) {
+      if ($offer_existing_id == $offer_clip['ID']) {
+        $match = TRUE;
+        break;
+      }
+    }
+    if (!($match)) {
+      $offer_existing_nid = db_result(db_query("SELECT nid FROM {node} WHERE title = '%d'", $offer_existing_id));
+      node_delete($offer_existing_nid);
+      $count_pulled++;
+    }
+  }
+
+  // Set results as message
+  drupal_set_message('Created ' . $count_create . ' new offers.');
+  drupal_set_message('Deleted ' . $count_pulled . ' pulled offers.');
+}
+
+/**
+ * Create new offer from API
+ */
+function clipapioffer_create($offer_clip) {
+  $node = new stdClass();
+  // Default stuff
+  $node->type = 'offer';
+  $node->created = time();
+  $node->changed = $node->created;
+  $node->status = 1;
+  $node->promote = 0;
+  $node->sticky = 0;
+  $node->format = 1;
+  $node->uid = $user->uid;
+
+  // CCK and custom stuff
+  $node->title = $offer_clip['ID'];
+  $node->field_brand[0]['value'] = $offer_clip['Brand'];
+  $node->field_start[0]['value'] = strtotime($offer_clip['ActDt']);
+  $node->field_expires[0]['value'] = strtotime($offer_clip['Exp']);
+  $node->field_amount[0]['value'] = ($offer_clip['Val'] / 100);
+  $node->field_description[0]['value'] = $offer_clip['Summ'] . ' ' . $offer_clip['L1'];
+  $node->field_url_code[0]['value'] = $offer_clip['ID'];
+  $node->field_image_url[0]['value'] = $image_prefix . $offer_clip['ISuff'];
+
+  // Save the node and update our count
+  node_save($node);
+    watchdog(
+      'CLIP API',
+      'Offer !title from !brand brand was created.',
+      array(
+        '!title' => $node->title,
+        '!brand' => $node->field_brand[0]['value']
+      ),
+      WATCHDOG_INFO
+    );
+}
+
+/**
+ * Implements hook_menu().
+ *
+ * Creates the admin tab which allows you to manually refresh offers
+ */
+function clipapioffer_menu() {
+  $items['admin/settings/clipapi/clipapi-offer'] = array(
+    'title' => t('CLIP API Update Offers'),
+    'page callback' => 'clipapioffer_admin',
+    'access callback' => TRUE,
+    'access arguments' => array('administer clip api'),
+    'type' => MENU_LOCAL_TASK,
+    'weight' => 3,
+  );
+  return $items;
+}
+
+function clipapioffer_admin() {
+  $contents = drupal_get_form('clipapioffer_manual') . drupal_get_form('clipapioffer_configure_cron');
+  return $contents;
+}
+
+function clipapioffer_manual() {
+  $form['clipapioffer_manual_description'] = array(
+    '#value' => '<h2>Manually update offers</h2>',
+  );
+  $form['clipapioffer_service'] = array(
+    '#type' => 'select',
+    '#title' => 'Service',
+    '#options' => array(
+      'GetOffers' => 'GetOffers',
+      'GetAllTargettedOffers' => 'GetAllTargettedOffers',
+    ),
+    '#description' => '<p>NOTE: Importing Targeted Offers will delete all regular offers and vice versa.</p>',
+  );
+  $form['clipapioffer_update'] = array(
+    '#type' => 'submit',
+    '#value' => 'Update Offers Now',
+  );
+
+  $form['#submit'][] = 'clipapioffer_manual_submit';
+
+  return $form;
+}
+
+function clipapioffer_manual_submit($form, &$form_state) {
+  clipapioffer_crud($form['#post']['clipapioffer_service']);
+}
+
+function clipapioffer_configure_cron() {
+  $form['clipapioffer_cron_description'] = array(
+    '#value' => '<h2>Run import on cron</h2>',
+  );
+
+  $form['clipapioffers_cron_toggle'] = array(
+    '#type' => 'checkbox',
+    '#default_value' => variable_get('clipapioffers_cron_toggle', 1),
+    '#title' => 'Import offers on cron',
+    '#description' => 'Check this box to automatically import/update/delete offers on cron.',
+  );
+
+  $form['clipapioffer_cron_service'] = array(
+    '#type' => 'select',
+    '#title' => 'Service',
+    '#options' => array(
+      'GetOffers' => 'GetOffers',
+      'GetAllTargettedOffers' => 'GetAllTargettedOffers',
+    ),
+    '#description' => '<p>Service to call on cron.</p><p>NOTE: Importing Targeted Offers will delete all regular offers and vice versa.</p>',
+    '#default_value' => variable_get('clipapioffer_cron_service', 'GetOffers'),
+  );
+
+  return system_settings_form($form);
+}
+
+/**
+ * Runs the clipapioffer_update_submit() function on cron
+ */
+function clipapioffer_cron() {
+  if (variable_get('clipapioffers_cron_toggle', 1)) {
+    clipapioffer_crud(variable_get('clipapioffer_cron_service', 'GetOffers'));
+  }
+}

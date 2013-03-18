@@ -1,0 +1,6 @@
+name = CLIP API Offer
+description = "Save Offers from Coupons Inc as nodes"
+core = 6.x
+package = CLIP API
+dependencies[] = clipapi
+
