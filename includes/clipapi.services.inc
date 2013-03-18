@@ -4,16 +4,19 @@
  */
 function clipapi_services($browscap = FALSE) {
   $browscap = get_browser($_SERVER['HTTP_USER_AGENT']);
+  $partner_token = variable_get('clipapi_partner_token', '');
+  $pid = variable_get('clipapi_pid', '');
+
   $services['GetCategories'] = array(
-    // The API returns an unencrypted string for this mofo. Not sure what's up
+    // The API returns an unencrypted string for this. Not sure what's up
     // with that
   );
 
   $services['GetOffers'] = array(
     'options' => array(
       'query' => array(
-        'sPartnerToken' => '8038e590-58b9-4deb-86fa-9638c3b94e6e',
-        'nPID' => '16721',
+        'sPartnerToken' => $partner_token,
+        'nPID' => $pid,
       ),
     ),
     'service' => array(
@@ -25,8 +28,8 @@ function clipapi_services($browscap = FALSE) {
   $services['GetDetectScript'] = array(
     'options' => array(
       'query' => array(
-        'sPartnerToken' => '8038e590-58b9-4deb-86fa-9638c3b94e6e',
-        'nPID' => '16721',
+        'sPartnerToken' => $partner_token,
+        'nPID' => $pid,
         'operatingSystem' => $browscap->platform,
         'browser' => $browscap->browser,
         'majorVer' => $browscap->majorver,
@@ -46,8 +49,8 @@ function clipapi_services($browscap = FALSE) {
   $services['GetInstallScript'] = array(
     'options' => array(
       'query' => array(
-        'sPartnerToken' => '8038e590-58b9-4deb-86fa-9638c3b94e6e',
-        'nPID' => '16721',
+        'sPartnerToken' => $partner_token,
+        'nPID' => $pid,
         'operatingSystem' => $browscap->platform,
         'browser' => 'Firefox', //$browscap->browser, Documentation says you can pass anything here, but "chrome" causes a 500 error
         'majorVer' => $browscap->majorver,
@@ -66,8 +69,8 @@ function clipapi_services($browscap = FALSE) {
   $services['GetPrintToken'] = array(
     'options' => array(
       'query' => array(
-        'sPartnerToken' => '8038e590-58b9-4deb-86fa-9638c3b94e6e',
-        'nPID' => '16721',
+        'sPartnerToken' => $partner_token,
+        'nPID' => $pid,
         'aCouponList' => array(
           '1',
           '2',
@@ -88,8 +91,8 @@ function clipapi_services($browscap = FALSE) {
   $services['GetAllTargettedOffers'] = array(
     'options' => array(
       'query' => array(
-        'sPartnerToken' => '8038e590-58b9-4deb-86fa-9638c3b94e6e',
-        'nPID' => '16721',
+        'sPartnerToken' => $partner_token,
+        'nPID' => $pid,
       ),
     ),
     'service' => array(
