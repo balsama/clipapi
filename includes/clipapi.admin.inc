@@ -9,8 +9,8 @@ function clipapi_admin() {
       'prod' => t('Production'),
       'dev' => t('Development'),
     ),
-    '#default_value' => variable_get('clipapi_environment', 'prod'),
-    '#description' => '<p>Production will target the xxx domain while Development will use <code>clip.pdn.coupons.com</code>.',
+    '#default_value' => variable_get('clipapi_environment', 'dev'),
+    '#description' => '<p>Production will target the <code>insight.coupons.com</code> domain while Development will use <code>clip.pdn.coupons.com</code>.',
   );
 
   $form['clipapi_keylong'] = array(
@@ -18,7 +18,7 @@ function clipapi_admin() {
     '#title' => t('Long Key'),
     '#required' => TRUE,
     '#size' => 89,
-    '#default_value' => variable_get('clipapi_keylong', 'prod'),
+    '#default_value' => variable_get('clipapi_keylong', ''),
   );
 
   $form['clipapi_keyshort'] = array(
@@ -26,7 +26,7 @@ function clipapi_admin() {
     '#title' => t('Short Key'),
     '#required' => TRUE,
     '#size' => 16,
-    '#default_value' => variable_get('clipapi_keyshort', 'prod'),
+    '#default_value' => variable_get('clipapi_keyshort', ''),
   );
 
   $form['clipapi_pid'] = array(
@@ -34,16 +34,16 @@ function clipapi_admin() {
     '#title' => t('PID'),
     '#required' => TRUE,
     '#size' => 16,
-    '#default_value' => variable_get('clipapi_pid', 'prod'),
+    '#default_value' => variable_get('clipapi_pid', ''),
   );
 
   $form['clipapi_partner_token'] = array(
     '#type' => 'textfield',
     '#title' => t('Partner Token'),
     '#required' => TRUE,
-    '#default_value' => variable_get('clipapi_partner_token', 'prod'),
+    '#default_value' => variable_get('clipapi_partner_token', ''),
   );
-  
+
   return system_settings_form($form);
 }
 
