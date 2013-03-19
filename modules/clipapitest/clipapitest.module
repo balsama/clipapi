@@ -24,6 +24,8 @@ function clipapitest_form() {
       'GetInstallScript' => 'GetInstallScript',
       'GetAllTargettedOffers' => 'GetAllTargettedOffers',
       'GetOffers' => 'GetOffers',
+      'GetUserRestrictions' => 'GetUserRestrictions',
+      'GetPrintToken' => 'GetPrintToken',
     ),
   );
 

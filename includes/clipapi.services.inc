@@ -35,10 +35,9 @@ function clipapi_services($browscap = FALSE) {
         'majorVer' => $browscap->majorver,
         'minorVer' => $browscap->minorver,
         'callBackFunc' => 'GetDeviceID',
-        'autoInitiate' => 'true',
+        'autoInitiate' => 'false',
         'MACSecondPage' => '',
       ),
-      'external' => TRUE,
     ),
     'service' => array(
       'engine' => 'PrintEngine.asmx',
@@ -99,6 +98,41 @@ function clipapi_services($browscap = FALSE) {
       'engine' => 'TargettedEngine.asmx',
       'service' => 'GetAllTargettedOffers',
     ),
+  );
+
+  $services['GetUserRestrictions'] = array(
+    'options' => array(
+      'query' => array(
+        'sPartnerToken' => $partner_token,
+        'nPID' => $pid,
+        'nAccountID' => '0',
+        'nDeviceID' => '549166962',
+      ),
+    ),
+    'service' => array(
+      'engine' => 'PrintEngine.asmx',
+      'service' => 'GetUserRestrictions',
+    ),
+  );
+
+  $services['GetPrintToken'] = array(
+    'options' => array(
+      'query' => array(
+        'sPartnerToken' => $partner_token,
+        'nPID' => $pid,
+        'aCouponList' => '17210387',
+        'DeviceID' => '549166962',
+        'AccessID' => '0',
+        'AffiliateID' => 'false',
+        'KeywordID' => '0',
+        'PlatformID' => '15',
+      ),
+    ),
+    'service' => array(
+      'engine' => 'PrintManager.aspx',
+      'service' => 'GetPrintToken',
+    ),
+
   );
 
   return $services;
