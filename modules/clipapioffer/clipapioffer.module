@@ -25,7 +25,7 @@ function clipapioffer_crud($service) {
       }
     }
     if (!($exists)) {
-      clipapioffer_create($offer_clip);
+      clipapioffer_create($offer_clip, $image_prefix);
       $count_create++;
     }
   } // END foreach offer from API call GetOffers
@@ -55,7 +55,7 @@ function clipapioffer_crud($service) {
 /**
  * Create new offer from API
  */
-function clipapioffer_create($offer_clip) {
+function clipapioffer_create($offer_clip, $image_prefix) {
   $node = new stdClass();
   // Default stuff
   $node->type = 'offer';
