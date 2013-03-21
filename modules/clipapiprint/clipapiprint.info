@@ -1,0 +1,5 @@
+name = CLIP API Print
+description = "Provides all of the backend pages, cookies, calculations and JS that are fired when a user selects an offer"
+core = 6.x
+package = CLIP API
+

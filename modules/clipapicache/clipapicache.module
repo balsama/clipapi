@@ -11,8 +11,9 @@
  * making a call to the API.
  */
 function clipapicache_getscript($type = 'GetDetectScript') {
-  $cid = 'clipapi_GetDetectJs-' . $type . $_SERVER['HTTP_USER_AGENT'];
+  $cid = 'clipapi-' . $type . $_SERVER['HTTP_USER_AGENT'];
   $data = cache_get($cid);
+  //if (1==1) {
   if (empty($data)) {
     $gds = clipapi_get($type);
     $data = array(

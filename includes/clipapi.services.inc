@@ -2,7 +2,7 @@
 /**
  * Definition of CLIP API Services as an array
  */
-function clipapi_services($browscap = FALSE) {
+function clipapi_services($args = NULL) {
   $browscap = get_browser($_SERVER['HTTP_USER_AGENT']);
   $partner_token = variable_get('clipapi_partner_token', '');
   $pid = variable_get('clipapi_pid', '');
@@ -115,13 +115,15 @@ function clipapi_services($browscap = FALSE) {
     ),
   );
 
+  $device_id = isset($args['DeviceID']) ? $args['DeviceID'] : '123456789'; // Generic device ID for the test module, which doesn't provide an arg to this function
+  $coupon_list = isset($_GET['selected']) ? $_GET['selected'] : '123456789'; // Generic offer ID ""
   $services['GetPrintToken'] = array(
     'options' => array(
       'query' => array(
         'sPartnerToken' => $partner_token,
         'nPID' => $pid,
-        'aCouponList' => '17210387',
-        'DeviceID' => '549166962',
+        'aCouponList' => $coupon_list,
+        'DeviceID' => $device_id, // Doesn't seem to matter what I put here as long as it's a 9-digit number
         'AccessID' => '0',
         'AffiliateID' => 'false',
         'KeywordID' => '0',
@@ -129,7 +131,7 @@ function clipapi_services($browscap = FALSE) {
       ),
     ),
     'service' => array(
-      'engine' => 'PrintManager.aspx',
+      'engine' => 'PrintEngine.asmx',
       'service' => 'GetPrintToken',
     ),
 

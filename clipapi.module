@@ -36,7 +36,6 @@ function clipapi_menu() {
     'weight' => 1,
   );
 
-
   return $items;
 }
 
@@ -51,12 +50,12 @@ function clipapi_perm() {
  *
  * Calls clip options which calls CLIP API and formats and returns the results.
  */
-function clipapi_get($service) {
+function clipapi_get($service, $args = NULL) {
   $service = check_plain($service);
   if (empty($service)) {
     $contents = format_xml_elements(array('error' => 'Please specify a service'));
   }
-  $contents = clip_options($service);
+  $contents = clip_options($service, TRUE, $args);
   if ($contents == FALSE) {
     $contents = format_xml_elements(array('error' => 'Unsupported Service'));
     watchdog('CLIP API', 'Unsupported service called: @service', array('@service' => $service));
@@ -72,12 +71,12 @@ function clipapi_get($service) {
  *   return the definition of the service.
  *
  * @return
- *   Definition of the service if $process is set to true, else calls the
+ *   Definition of the service if $process is set to false, else calls the
  *   clip_process() function.
  */
-function clip_options($requested_service, $process = TRUE) {
+function clip_options($requested_service, $process = TRUE, $args = NULL) {
   include_once('includes/clipapi.services.inc');
-  $services = clipapi_services();
+  $services = clipapi_services($args);
 
   foreach ($services as $service_name => $definition) {
     if ($service_name == $requested_service) {
@@ -109,9 +108,10 @@ function clip_process($options) {
   $domain = (variable_get('clipapi_environment', 'prod') == 'prod') ? 'http://insight.coupons.com/COS20/' : 'http://clip.pdn.coupons.com/COS20/';
   $service = implode('/', $options['service']);
   $url = url($domain . $service, $options['options']);
+  dpm($url);
 
   // HTTP GET
-  $results = drupal_http_request($url, array(), 'GET');
+  $results = drupal_http_request($url, array(), 'GET', NULL, 10);
 
   // The response is in data
   //
