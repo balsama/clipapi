@@ -149,15 +149,6 @@ function updateSidebar() {
       $(this).animate( {height: newheight} );
     });
   }
-
-  //Why is this so complicated? Because the print link for microsites
-  //has a variable param in it.
-  /*
-  var currentHREF = $('a.print-link').attr('href');
-  currentHREF = currentHREF.split('?offers=');
-  newHREF = currentHREF[0] + '?offers=' + selected;
-  $('a.print-link').attr('href', newHREF);
-  */
 };
 
 /**

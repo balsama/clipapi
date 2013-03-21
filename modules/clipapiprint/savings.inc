@@ -19,9 +19,9 @@ function savings() {
     $id = $_GET['curSelected'];
     $savings = db_result(db_query("SELECT field_amount_value FROM {content_type_offer} WHERE field_url_code_value = '$id'"));
   }
-  
+
   $content = $savings;
-  
+
   print number_format($content, 2);
 }
 ?>

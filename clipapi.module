@@ -108,7 +108,6 @@ function clip_process($options) {
   $domain = (variable_get('clipapi_environment', 'prod') == 'prod') ? 'http://insight.coupons.com/COS20/' : 'http://clip.pdn.coupons.com/COS20/';
   $service = implode('/', $options['service']);
   $url = url($domain . $service, $options['options']);
-  dpm($url);
 
   // HTTP GET
   $results = drupal_http_request($url, array(), 'GET', NULL, 10);

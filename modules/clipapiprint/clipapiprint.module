@@ -1,5 +1,11 @@
 <?php
-
+function clipapiprint_init() {
+  // Add Coupons Inc Detect and Install JS
+  $script = clipapicache_getscript('GetDetectScript');
+  drupal_add_js(strip_tags($script['JSCode']), 'inline');
+  $script = clipapicache_getscript('GetInstallScript');
+  drupal_add_js(strip_tags($script['JSCode']), 'inline');
+}
 /**
  * Implementation of hook_block to create the "Selected Offers" block for the right sidebar
  *
@@ -34,12 +40,6 @@ function clipapiprint_block($op = 'list', $delta = 0, $edit = array()) {
     drupal_add_js(drupal_get_path('module', 'clipapiprint') . '/includes/fancybox/jquery.fancybox-1.3.4.pack.js');
     drupal_add_js(drupal_get_path('module', 'clipapiprint') . '/includes/offer-select.js');
     drupal_add_css(drupal_get_path('module', 'clipapiprint') . '/includes/fancybox/jquery.fancybox-1.3.4.css');
-
-    // Add Coupons Inc Detect and Install JS
-    $script = clipapicache_getscript('GetDetectScript');
-    drupal_add_js(strip_tags($script['JSCode']), 'inline');
-    $script = clipapicache_getscript('GetInstallScript');
-    drupal_add_js(strip_tags($script['JSCode']), 'inline');
 
     // Generate block content
     // content variable that will be returned for display

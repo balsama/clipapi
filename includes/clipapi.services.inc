@@ -116,7 +116,7 @@ function clipapi_services($args = NULL) {
   );
 
   $device_id = isset($args['DeviceID']) ? $args['DeviceID'] : '123456789'; // Generic device ID for the test module, which doesn't provide an arg to this function
-  $coupon_list = isset($_GET['selected']) ? $_GET['selected'] : '123456789'; // Generic offer ID ""
+  $coupon_list = isset($_GET['selected']) ? implode('&aCouponList', explode(',', $_GET['selected'])) : '123456789'; // Generic offer ID ""
   $services['GetPrintToken'] = array(
     'options' => array(
       'query' => array(
