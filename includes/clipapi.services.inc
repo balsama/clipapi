@@ -4,6 +4,7 @@
  */
 function clipapi_services($args = NULL) {
   $browscap = get_browser($_SERVER['HTTP_USER_AGENT']);
+  $browser = ($browscap->browser == 'IE') ? 'IE' : 'Firefox';
   $partner_token = variable_get('clipapi_partner_token', '');
   $pid = variable_get('clipapi_pid', '');
 
@@ -34,7 +35,7 @@ function clipapi_services($args = NULL) {
         'browser' => $browscap->browser,
         'majorVer' => $browscap->majorver,
         'minorVer' => $browscap->minorver,
-        'callBackFunc' => 'GetDeviceID',
+        'callBackFunc' => 'ReceiveDeviceID',
         'autoInitiate' => 'false',
         'MACSecondPage' => '',
       ),
@@ -51,10 +52,10 @@ function clipapi_services($args = NULL) {
         'sPartnerToken' => $partner_token,
         'nPID' => $pid,
         'operatingSystem' => $browscap->platform,
-        'browser' => 'Firefox', //$browscap->browser, Documentation says you can pass anything here, but "chrome" causes a 500 error
+        'browser' => $browser, //$browscap->browser, Documentation says you can pass anything here, but "chrome" causes a 500 error
         'majorVer' => $browscap->majorver,
         'minorVer' => $browscap->minorver,
-        'callBackFunc' => '',
+        'callBackFunc' => 'nullfunc',
         'autoInitiate' => 'false',
       ),
     ),
@@ -64,26 +65,22 @@ function clipapi_services($args = NULL) {
     ),
   );
 
-  // Returns blank screen
-  $services['GetPrintToken'] = array(
+  $services['GetCheckPrinterScript'] = array(
     'options' => array(
       'query' => array(
         'sPartnerToken' => $partner_token,
         'nPID' => $pid,
-        'aCouponList' => array(
-          '1',
-          '2',
-        ),
-        'DeviceID' => '',
-        'AccessID' => '',
-        'AffliateIiD' => '',
-        'PlatformID' => '15',
-        'KeywordID' => '0',
+        'operatingSystem' => $browscap->platform,
+        'browser' => $browser, //$browscap->browser, Documentation says you can pass anything here, but "chrome" causes a 500 error
+        'majorVer' => $browscap->majorver,
+        'minorVer' => $browscap->minorver,
+        'callBackFunc' => 'nullfunc',
+        'autoInitiate' => 'false',
       ),
     ),
     'service' => array(
-      'engine' => 'PrintManger.ASPX',
-      'service' => 'GetPrintToken',
+      'engine' => 'PrintEngine.asmx',
+      'service' => 'GetCheckPrinterScript',
     ),
   );
 
@@ -115,15 +112,15 @@ function clipapi_services($args = NULL) {
     ),
   );
 
-  $device_id = isset($args['DeviceID']) ? $args['DeviceID'] : '123456789'; // Generic device ID for the test module, which doesn't provide an arg to this function
-  $coupon_list = isset($_GET['selected']) ? implode('&aCouponList', explode(',', $_GET['selected'])) : '123456789'; // Generic offer ID ""
+  $device_id = isset($args['DeviceID']) ? $args['DeviceID'] : '549166962'; // Generic device ID for the test module, which doesn't provide an arg to this function
+  $coupon_list = isset($_GET['selected']) ? implode('&aCouponList=', explode(',', $_GET['selected'])) : '17654011&aCouponList=17769373'; // Generic offer ID ""
   $services['GetPrintToken'] = array(
     'options' => array(
       'query' => array(
         'sPartnerToken' => $partner_token,
         'nPID' => $pid,
         'aCouponList' => $coupon_list,
-        'DeviceID' => $device_id, // Doesn't seem to matter what I put here as long as it's a 9-digit number
+        'DeviceID' => $device_id,
         'AccessID' => '0',
         'AffiliateID' => 'false',
         'KeywordID' => '0',
@@ -134,7 +131,22 @@ function clipapi_services($args = NULL) {
       'engine' => 'PrintEngine.asmx',
       'service' => 'GetPrintToken',
     ),
+  );
 
+  $device_id = isset($args['DeviceID']) ? $args['DeviceID'] : '549166962'; // Generic device ID for the test module, which doesn't provide an arg to this function
+  $services['GetUserRestrictions'] = array(
+    'options' => array(
+      'query' => array(
+        'sPartnerToken' => $partner_token,
+        'nPID' => $pid,
+        'nAccountID' => '0',
+        'nDeviceID' => $device_id,
+      ),
+    ),
+    'service' => array(
+      'engine' => 'PrintEngine.asmx',
+      'service' => 'GetUserRestrictions',
+    ),
   );
 
   return $services;

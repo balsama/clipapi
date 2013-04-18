@@ -15,17 +15,23 @@ function clipapioffer_crud($service) {
     $offers_existing_id[] = $row['title'];
   }
 
+  $notify = variable_get('clipapioffer_notify_toggle', 0);
+  if ($notify) {
+    $recipients = variable_get('clipapioffer_notify_addresses', '');
+  }
   foreach ($offers_clip as $offer_clip) {
     $exists = FALSE;
     foreach ($offers_existing_id as $offer_existing_id) {
       if ($offer_clip['ID'] == $offer_existing_id) {
         // We have a match
-        // @todo load the node, check if everything still matches
         $exists = TRUE;
       }
     }
     if (!($exists)) {
       clipapioffer_create($offer_clip, $image_prefix);
+      if ($notify) {
+        clipapioffer_notify_send($offer_clip, $recipients);
+      }
       $count_create++;
     }
   } // END foreach offer from API call GetOffers
@@ -41,7 +47,7 @@ function clipapioffer_crud($service) {
       }
     }
     if (!($match)) {
-      $offer_existing_nid = db_result(db_query("SELECT nid FROM {node} WHERE title = '%d'", $offer_existing_id));
+      $offer_existing_nid = db_result(db_query("SELECT nid FROM {node} WHERE title = '%s'", $offer_existing_id));
       node_delete($offer_existing_nid);
       $count_pulled++;
     }
@@ -79,15 +85,15 @@ function clipapioffer_create($offer_clip, $image_prefix) {
 
   // Save the node and update our count
   node_save($node);
-    watchdog(
-      'CLIP API',
-      'Offer !title from !brand brand was created.',
-      array(
-        '!title' => $node->title,
-        '!brand' => $node->field_brand[0]['value']
-      ),
-      WATCHDOG_INFO
-    );
+  watchdog(
+    'CLIP API',
+    'Offer !title from !brand brand was created.',
+    array(
+      '!title' => $node->title,
+      '!brand' => $node->field_brand[0]['value']
+    ),
+    WATCHDOG_INFO
+  );
 }
 
 /**
@@ -107,25 +113,32 @@ function clipapioffer_menu() {
   return $items;
 }
 
+/**
+ * Contents of the clipapioffer page. Consists of forms created by the three
+ * subsequent functions.
+ */
 function clipapioffer_admin() {
-  $contents = drupal_get_form('clipapioffer_manual') . drupal_get_form('clipapioffer_configure_cron');
+  $contents = '<fieldset><legend><span class="fieldset-legend">Notify Via Email</span></legend><div class="fieldset-wrapper">' . drupal_get_form('clipapioffer_notify') . '</div></fieldset><fieldset><legend><span class="fieldset-legend">Advanced</span></legend><div class="fieldset-wrapper">' . drupal_get_form('clipapioffer_manual') . drupal_get_form('clipapioffer_configure_cron') . '</div></feidlset>';
   return $contents;
 }
 
 function clipapioffer_manual() {
-  $form['clipapioffer_manual_description'] = array(
-    '#value' => '<h2>Manually update offers</h2>',
+  $form['cliapiofffer_manual'] = array(
+    '#type' => 'fieldset',
+    '#title' => 'Manually Update Offers',
+    '#collapsible' => TRUE,
+    '#collapsed' => TRUE,
   );
-  $form['clipapioffer_service'] = array(
+  $form['cliapiofffer_manual']['clipapioffer_service'] = array(
     '#type' => 'select',
     '#title' => 'Service',
     '#options' => array(
       'GetOffers' => 'GetOffers',
       'GetAllTargettedOffers' => 'GetAllTargettedOffers',
     ),
-    '#description' => '<p>NOTE: Importing Targeted Offers will delete all regular offers and vice versa.</p>',
+    '#description' => '<p class="status-0"><strong>WARNING:</strong> Importing Targeted Offers will delete all regular offers and vice versa.</p>',
   );
-  $form['clipapioffer_update'] = array(
+  $form['cliapiofffer_manual']['clipapioffer_update'] = array(
     '#type' => 'submit',
     '#value' => 'Update Offers Now',
   );
@@ -140,26 +153,61 @@ function clipapioffer_manual_submit($form, &$form_state) {
 }
 
 function clipapioffer_configure_cron() {
-  $form['clipapioffer_cron_description'] = array(
-    '#value' => '<h2>Run import on cron</h2>',
+  $form['cliapiofffer_cron'] = array(
+    '#type' => 'fieldset',
+    '#title' => 'Run Import On Cron',
+    '#collapsible' => TRUE,
+    '#collapsed' => TRUE,
   );
 
-  $form['clipapioffers_cron_toggle'] = array(
+  $form['cliapiofffer_cron']['clipapioffers_cron_toggle'] = array(
     '#type' => 'checkbox',
     '#default_value' => variable_get('clipapioffers_cron_toggle', 1),
     '#title' => 'Import offers on cron',
     '#description' => 'Check this box to automatically import/update/delete offers on cron.',
   );
 
-  $form['clipapioffer_cron_service'] = array(
+  $form['cliapiofffer_cron']['clipapioffer_cron_service'] = array(
     '#type' => 'select',
     '#title' => 'Service',
     '#options' => array(
       'GetOffers' => 'GetOffers',
       'GetAllTargettedOffers' => 'GetAllTargettedOffers',
     ),
-    '#description' => '<p>Service to call on cron.</p><p>NOTE: Importing Targeted Offers will delete all regular offers and vice versa.</p>',
+    '#description' => '<p>Service to call on cron.</p><p class="status-0"><strong>WARNING:</strong> Importing Targeted Offers will delete all regular offers and vice versa.</p>',
     '#default_value' => variable_get('clipapioffer_cron_service', 'GetOffers'),
+  );
+
+  $form = system_settings_form($form);
+
+  // Unset the default system_setting_form buttons and add them back within the
+  // fieldset
+  unset($form['buttons']['submit']);
+  unset($form['buttons']['reset']);
+  $form['cliapiofffer_cron']['buttons']['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Save configuration'),
+  );
+  $form['cliapiofffer_cron']['buttons']['reset'] = array(
+    '#type' => 'submit',
+    '#value' => t('Reset to defaults'),
+  );
+
+  return $form;
+}
+
+function clipapioffer_notify() {
+  $form['clipapioffer_notify_toggle'] = array(
+    '#type' => 'checkbox',
+    '#title' => 'Send notifications when a new offer is created',
+    '#default_value' => variable_get('clipapioffer_notify_toggle', 0),
+  );
+
+  $form['clipapioffer_notify_addresses'] = array(
+    '#type' => 'textfield',
+    '#title' => 'Recipient addresses',
+    '#default_value' => variable_get('clipapioffer_notify_addresses', ''),
+    '#description' => 'Enter a semicolon-seperated list of recipient email addresses.',
   );
 
   return system_settings_form($form);
@@ -172,4 +220,37 @@ function clipapioffer_cron() {
   if (variable_get('clipapioffers_cron_toggle', 1)) {
     clipapioffer_crud(variable_get('clipapioffer_cron_service', 'GetOffers'));
   }
+}
+
+/**
+ * Sends email when new offers are created.
+ *
+ * @param $offer_clip array
+ *   Array representing the created offer.
+ * @param $recipients string
+ *   Semicolon-seperated list of email addresses.
+ */
+function clipapioffer_notify_send($offer_clip, $recipients) {
+  $body = "
+         <p>The following offer was automatically created:</p>
+         <a href='http://" . $_SERVER['HTTP_HOST'] . '/' . $offer_clip['ID'] . "'>" . $offer_clip['ID'] . "</a>
+         <p>" . $offer_clip['RT'] . "</p>
+         <hr />
+         <p style='font-size: 10px; color: #999999;'>To modify email notification settings, visit: <a href='http://" . $_SERVER['HTTP_HOST'] . "/admin/settings/clipapi/clipapi-offer'>http://" . $_SERVER['HTTP_HOST'] . "/admin/settings/clipapi/clipapi-offer</a><p>
+        ";
+  $body = drupal_wrap_mail($body);
+  $message = array(
+    'to' => str_replace(';', ',', $recipients),
+    'subject' => 'New Offer Created on LMS',
+    'body' => $body,
+    'headers' => array(
+      'From' => 'noreply@linkwellhealth.com',
+      'MIME-Version' => '1.0',
+      'Content-Type' => 'text/html; charset=UTF-8; format=flowed',
+      'Content-Transfer-Encoding' => '8Bit',
+      'X-Mailer' => 'Drupal'
+    ),
+  );
+
+  drupal_mail_send($message);
 }

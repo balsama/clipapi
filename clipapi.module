@@ -107,7 +107,20 @@ function clip_process($options) {
   // Contruct API URL
   $domain = (variable_get('clipapi_environment', 'prod') == 'prod') ? 'http://insight.coupons.com/COS20/' : 'http://clip.pdn.coupons.com/COS20/';
   $service = implode('/', $options['service']);
-  $url = url($domain . $service, $options['options']);
+  $url = url($domain . $service);
+
+  // We have to manually build the query array because the CLIP API requires
+  // us to send each coupon as a seperate param each with the same name. Since
+  // this is against the standard, Drupal's url() function doesn't allow us to
+  // build it that way.
+  $queries = array();
+  foreach($options['options']['query'] as $key => $value) {
+    $queries[] = $key . '=' . $value;
+  }
+  $query = '?' . implode('&', $queries);
+  $url = $url . $query;
+  //mail('adam.balsam@brunellocreative.com', 'url', $url);
+  //dpm($url);
 
   // HTTP GET
   $results = drupal_http_request($url, array(), 'GET', NULL, 10);
